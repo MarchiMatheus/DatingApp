@@ -36,7 +36,7 @@ namespace DatingApp.API.Controllers
 
             var user = new User
             {
-                Username = userDTO.Username
+                UserName = userDTO.Username
             };
 
             var createdUser = this._repo.Register(user, userDTO.Password);
@@ -56,7 +56,7 @@ namespace DatingApp.API.Controllers
             var claims = new []
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username)
+                new Claim(ClaimTypes.Name, user.UserName)
             };
 
             //Get the key from configuration
