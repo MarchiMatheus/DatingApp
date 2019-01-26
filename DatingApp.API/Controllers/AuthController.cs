@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
 using DatingApp.API.Data;
 using DatingApp.API.Dto;
 using DatingApp.API.Models;
@@ -19,11 +20,15 @@ namespace DatingApp.API.Controllers
         private readonly IAuthRepository _repo;
 
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        public AuthController(IAuthRepository repo, IConfiguration configuration)
+        public AuthController(IAuthRepository repo,
+                              IConfiguration configuration,
+                              IMapper mapper)
         {
             this._repo = repo;
             this._configuration = configuration;
+            this._mapper = mapper;
         }
 
         [HttpPost("register")]
@@ -47,16 +52,16 @@ namespace DatingApp.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
-            var user = await this._repo.Login(loginDto.Username.ToLower(), loginDto.Password);
+            var userFromRepo = await this._repo.Login(loginDto.Username.ToLower(), loginDto.Password);
 
-            if (user == null)
+            if (userFromRepo == null)
                 return Unauthorized();
             
             //Build a JWT token to return for the user (client)
             var claims = new []
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName)
+                new Claim(ClaimTypes.NameIdentifier, userFromRepo.Id.ToString()),
+                new Claim(ClaimTypes.Name, userFromRepo.UserName)
             };
 
             //Get the key from configuration
@@ -76,11 +81,14 @@ namespace DatingApp.API.Controllers
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
+            var user = this._mapper.Map<UserForListDto>(userFromRepo);
+
             return Ok
             (
                 new
                 {
-                    token = tokenHandler.WriteToken(token)
+                    token = tokenHandler.WriteToken(token),
+                    user
                 }
             );
         }
